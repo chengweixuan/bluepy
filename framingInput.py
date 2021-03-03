@@ -51,6 +51,8 @@ def bufferData(data):
 
 
 def buildPacket():
+    if len(packetBuilder) == 0 and len(buffer) == 0:
+        return
     packetBuilderSpace = 16 - len(packetBuilder)
 
     if len(buffer) >= packetBuilderSpace:
@@ -114,7 +116,7 @@ def handleDataPacket(packet):
     packet = packet | dancePositionMask  # set dance position bits
     decodedPacket = DataPacket(packet)
     # print("command packet:", hex(packet))
-    print(dataCounter, decodedPacket.__dict__)
+    print(decodedPacket.__dict__)
     dataCounter += 1
 
 
@@ -194,6 +196,7 @@ def scanAndConnect(address):
 
 def handshake():
     global handshakeCompleted
+    global currentCommand
     helloPacket = makeCommandPacket('hello')
     serial_port_char.write(helloPacket)  # say hello to beetle
     #  receive ACK from beetle
@@ -204,13 +207,16 @@ def handshake():
         scanAndConnect(mac_address)
 
     if currentCommand == 'ACK':
+        # print("ACK received sending back ACK")
         ackPacket = makeCommandPacket('ACK')
         serial_port_char.write(ackPacket)
         print("handshake completed")
+        # currentCommand = 'none'
         handshakeCompleted = True
         return
     else:
         print("wrong response:", currentCommand, "sending hello again")
+        time.sleep(1)
         handshake()
     print("timeout attempting handshake again")
     handshake()  # call handshake again due to timeout or wrong response
@@ -255,7 +261,11 @@ while True:
         # buildPacket()
     except BTLEDisconnectError:
         print("Disconnected attempting reconnection")
+
         handshakeCompleted = False
         scanAndConnect(mac_address)
+        buffer.clear()
+        packetBuilder.clear()
         handshake()
+        currentCommand = 'None'
     buildPacket()
