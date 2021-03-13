@@ -104,7 +104,7 @@ def getMacAddressFromIndex(index):
         2: "34:B1:F7:D2:37:5B",  # dance beetle
         3: "80:30:DC:E9:08:F4",  # naked beetle
         4: "80:30:DC:D9:0C:9D",  # zip-lock beetle
-        5: "80:30:DC:D9:0C:FB",
+        5: "80:30:DC:D9:0C:FB", # white boi
         6: "80:30:DC:E9:25:55"
     }.get(index, "invalid mac address")
 
@@ -249,7 +249,7 @@ correctInput = False
 mac_address = "unknown"
 
 while not correctInput:
-    mac_address_index = 6 # int(input("Enter bluno beetle MAC address index: "))
+    mac_address_index = 5 # int(input("Enter bluno beetle MAC address index: "))
     dancePosition = 1 # int(input("Enter user dance position: "))
     mac_address = getMacAddressFromIndex(mac_address_index)
     if mac_address_index > 6 or mac_address_index < 1 or dancePosition < 1 or dancePosition > 3:
