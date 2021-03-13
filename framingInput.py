@@ -9,16 +9,16 @@ serial_port_char_uuid = UUID(0xDFB1)
 
 class DataPacket:
     def __init__(self, data):
-        self.dancePosition = (data & (0b11 << 118)) >> 118
-        self.danceState = (data & (0b1 << 114)) >> 114
-        self.leftRight = (data & (0b11 << 112)) >> 112
-        self.xAccel = decodeDataField((data & 0xFFFF000000000000000000000000) >> 96)
-        self.yAccel = decodeDataField((data & 0xFFFF00000000000000000000) >> 80)
-        self.zAccel = decodeDataField((data & 0xFFFF0000000000000000) >> 64)
-        self.yaw = decodeDataField((data & 0xFFFF000000000000) >> 48)
-        self.pitch = decodeDataField((data & 0xFFFF00000000) >> 32)
-        self.row = decodeDataField((data & 0xFFFF0000) >> 16)
-        self.CRC = getSignedInt((data & 0xFF00) >> 8, 8)
+        self.dancePosition = (data & (0b11 << 126)) >> 126
+        self.danceState = (data & (0b1 << 122)) >> 122
+        self.leftRight = (data & (0b11 << 120)) >> 120
+        self.xAccel = decodeDataField((data & 0xFFFF00000000000000000000000000) >> 104)
+        self.yAccel = decodeDataField((data & 0xFFFF0000000000000000000000) >> 88)
+        self.zAccel = decodeDataField((data & 0xFFFF000000000000000000) >> 72)
+        self.yaw = decodeDataField((data & 0xFFFF00000000000000) >> 56)
+        self.pitch = decodeDataField((data & 0xFFFF0000000000) >> 40)
+        self.row = decodeDataField((data & 0xFFFF000000) >> 24)
+        self.EMG = decodeDataField((data & 0xFFFF00) >> 8)
 
 
 class MyDelegate(DefaultDelegate):
@@ -53,14 +53,14 @@ def bufferData(data):
 def buildPacket():
     if len(packetBuilder) == 0 and len(buffer) == 0:
         return
-    packetBuilderSpace = 16 - len(packetBuilder)
+    packetBuilderSpace = 17 - len(packetBuilder)
 
     if len(buffer) >= packetBuilderSpace:
         for index in range(packetBuilderSpace):
             packetBuilder.append(buffer.popleft())
 
-    if len(packetBuilder) == 16:  # this should always be true here
-        if packetBuilder[0] == 0xAC and packetBuilder[15] == 0xBE:
+    if len(packetBuilder) == 17:  # this should always be true here
+        if packetBuilder[0] == 0xAC and packetBuilder[16] == 0xBE:
             # print("packet formed:", packetBuilder)
             handleDataPacket(int.from_bytes(packetBuilder, 'big'))
             packetBuilder.clear()
@@ -98,7 +98,9 @@ def getMacAddressFromIndex(index):
         1: "80:30:DC:D9:1F:B2",  # test beetle
         2: "34:B1:F7:D2:37:5B",  # dance beetle
         3: "80:30:DC:E9:08:F4",  # naked beetle
-        4: "80:30:DC:D9:0C:9D"  # zip-lock beetle
+        4: "80:30:DC:D9:0C:9D",  # zip-lock beetle
+        5: "80:30:DC:D9:0C:FB",  # white beetle
+        6: "80:30:DC:E9:25:55"  # emg beetle
     }.get(index, "invalid mac address")
 
 
@@ -236,7 +238,7 @@ while not correctInput:
     mac_address_index = int(input("Enter bluno beetle MAC address index: "))
     dancePosition = int(input("Enter user dance position: "))
     mac_address = getMacAddressFromIndex(mac_address_index)
-    if mac_address_index > 5 or mac_address_index < 1 or dancePosition < 1 or dancePosition > 3:
+    if mac_address_index > 6 or mac_address_index < 1 or dancePosition < 1 or dancePosition > 3:
         print("invalid index entered. Try again")
     else:
         mac_address = getMacAddressFromIndex(mac_address_index)
