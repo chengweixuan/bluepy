@@ -1,3 +1,15 @@
+"""
+1. open a terminal and run the below command using your nusstu creds
+ssh -t -L 1234:127.0.0.1:1234 siying@sunfire-r.comp.nus.edu.sg ssh -L 1234:127.0.0.1:1234 -N xilinx@137.132.86.238
+2. on xilinx server
+    cd ~/w9-excomms
+    python3 fpga.py
+3. open another terminal and connect to xilinx server
+    cd ~/w9-excomms
+    python3 eval_server.py
+4. run this script (i hardcoded the ble index num and dancer id)
+"""
+
 from bluepy.btle import DefaultDelegate, UUID, Peripheral, BTLEException, BTLEDisconnectError
 import time
 import struct
