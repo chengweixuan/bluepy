@@ -77,7 +77,9 @@ def getMacAddressFromIndex(index):
         1: "80:30:DC:D9:1F:B2",  # test beetle
         2: "34:B1:F7:D2:37:5B",  # dance beetle
         3: "80:30:DC:E9:08:F4",  # naked beetle
-        4: "80:30:DC:D9:0C:9D"  # zip-lock beetle
+        4: "80:30:DC:D9:0C:9D",  # zip-lock beetle
+        5: "80:30:DC:D9:0C:FB",  # white beetle
+        6: "80:30:DC:E9:25:55"  # emg beetle
     }.get(index, "invalid mac address")
 
 
@@ -90,7 +92,7 @@ def getCommandBits(command):
 
 
 def handleDataPacket(packet, index):
-    dancePositionMask = dancePosition << 118
+    dancePositionMask = (index + 1) << 118
     packet = packet | dancePositionMask  # set dance position bits
     decodedPacket = DataPacket(packet)
     receivedPackets[index] = decodedPacket
@@ -160,17 +162,31 @@ def makeCommandPacket(command):
     return struct.pack('>B', commandByte)
 
 
+def isInvalidIndexRange(index):
+    if index > 6 or index < 1:
+        return True
+    else:
+        return False
+
+
 class PrintPackets(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
+        self.allConnected = False
 
     def run(self):
         while True:
             if handshakeCompletedFlags[0] and handshakeCompletedFlags[1] and handshakeCompletedFlags[2]:
+                self.allConnected = True
+
+            if handshakeCompletedFlags[0] and handshakeCompletedFlags[1] and handshakeCompletedFlags[2]:
                 for index in range(len(receivedPackets)):
                     print(index, dataCounters[index], receivedPackets[index].__dict__)
                 print()  # provides space
-            else:
+
+                time.sleep(0.05)  # test delay see if there's issues
+
+            elif self.allConnected:
                 disconnected_beetles = "Error: beetle: "
                 for index in range(len(receivedPackets)):
                     if not receivedPackets[index]:
@@ -189,7 +205,7 @@ class BeetleThread(threading.Thread):
         self.connected = False
 
     def scanAndConnect(self):
-        mac_address = mac_addrs[self.index]
+        mac_address = mac_addresses[self.index]
         try:
             self.beetle.connect(mac_address)
             print(self.index, "connected")
@@ -267,9 +283,31 @@ class BeetleThread(threading.Thread):
             self.buildPacket()
 
 
-dancePosition = 1
+mac_addresses = ["", "", ""]
+beetles_used = ["", "", ""]
+correctInput = False
+mac_address_indexes = "1: Test beetle \n" \
+                      "2: Black beetle \n" \
+                      "3: Yellow beetle \n" \
+                      "4: Teal beetle \n" \
+                      "5: White beetle \n" \
+                      "6: EMG beetle \n"
 
-mac_addrs = ["80:30:DC:D9:1F:B2", "80:30:DC:E9:08:F4", "80:30:DC:D9:0C:9D"]
+while not correctInput:
+    print(mac_address_indexes)
+    print("Input the beetles according the dancer positions 1-3 from left to right")
+    firstDancer = int(input("Enter beetle MAC address index of the first dancer: "))
+    secondDancer = int(input("Enter beetle MAC address index of the second dancer: "))
+    thirdDancer = int(input("Enter beetle MAC address index of the dancer dancer: "))
+
+    if isInvalidIndexRange(firstDancer) or isInvalidIndexRange(secondDancer) or isInvalidIndexRange(thirdDancer):
+        print("Invalid index entered. Try again")
+    else:
+        mac_addresses[0] = getMacAddressFromIndex(firstDancer)
+        mac_addresses[1] = getMacAddressFromIndex(secondDancer)
+        mac_addresses[2] = getMacAddressFromIndex(thirdDancer)
+        correctInput = True
+
 
 currentCommands = ['none', 'none', 'none']
 buffers = [deque(), deque(), deque()]
@@ -284,4 +322,3 @@ for beetleIndex in range(3):
 
 printThread = PrintPackets()
 printThread.start()
-
