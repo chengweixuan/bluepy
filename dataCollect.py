@@ -124,7 +124,7 @@ def handleDataPacket(packet):
         return
     if filename:
         with open(filename, "a") as myFile:
-            myFile.write(str(decodedPacket.xAccel) + "," + str(decodedPacket.yAccel) + "," + str(decodedPacket.zAccel) + "," + str(decodedPacket.zAccel) + "," + str(decodedPacket.yaw) +  "," + str(decodedPacket.pitch) + "," + str(decodedPacket.row) + "\n")
+            myFile.write(str(decodedPacket.xAccel) + "," + str(decodedPacket.yAccel) + "," + str(decodedPacket.zAccel) + "," + str(decodedPacket.yaw) + "," + str(decodedPacket.pitch) + "," + str(decodedPacket.row) + "\n")
     print(decodedPacket.__dict__)
     dataCounter += 1
 
