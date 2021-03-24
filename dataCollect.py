@@ -112,6 +112,9 @@ def getCommandBits(command):
     }.get(command, 7)
 
 
+filename = "./data.txt"
+
+
 def handleDataPacket(packet):
     global dataCounter
     dancePositionMask = dancePosition << 118
@@ -119,6 +122,9 @@ def handleDataPacket(packet):
     decodedPacket = DataPacket(packet)
     if corrupted_packet(decodedPacket):
         return
+    if filename:
+        with open(filename, "a") as myFile:
+            myFile.write(str(decodedPacket.xAccel) + "," + str(decodedPacket.yAccel) + "," + str(decodedPacket.zAccel) + "," + str(decodedPacket.zAccel) + "," + str(decodedPacket.yaw) +  "," + str(decodedPacket.pitch) + "," + str(decodedPacket.row) + "\n")
     print(decodedPacket.__dict__)
     dataCounter += 1
 
@@ -242,8 +248,15 @@ dataCounter = 0
 
 correctInput = False
 mac_address = "unknown"
+mac_address_indexes = "1: Test beetle \n" \
+                      "2: Black beetle \n" \
+                      "3: Yellow beetle \n" \
+                      "4: Teal beetle \n" \
+                      "5: White beetle \n" \
+                      "6: EMG beetle \n"
 
 while not correctInput:
+    print(mac_address_indexes)
     mac_address_index = int(input("Enter bluno beetle MAC address index: "))
     dancePosition = int(input("Enter user dance position: "))
     mac_address = getMacAddressFromIndex(mac_address_index)

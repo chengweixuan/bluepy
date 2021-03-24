@@ -194,16 +194,16 @@ class PrintPackets(threading.Thread):
                     print(index, dataCounters[index], receivedPackets[index].__dict__)
                 print()  # provides space
 
-                time.sleep(0.05)  # test delay see if there's issues
-
             elif self.allConnected:
                 disconnected_beetles = "Error: beetle: "
                 for index in range(len(receivedPackets)):
-                    if not receivedPackets[index]:
+                    if not handshakeCompletedFlags[index]:
                         disconnected_beetles += str(index) + " "
                 disconnected_beetles += "are disconnected"
-
                 print(disconnected_beetles)
+                time.sleep(1)
+
+            time.sleep(0.05)  # test delay to limit print
 
 
 class BeetleThread(threading.Thread):
