@@ -193,8 +193,8 @@ def scanAndConnect(address):
         print("connected")
         connected = True
     except BTLEException:
-        print("unable to connect, attempting in 1s")
-        time.sleep(1)
+        print("unable to connect, attempting again")
+        return
 
 
 def oob(angle):
@@ -242,8 +242,15 @@ dataCounter = 0
 
 correctInput = False
 mac_address = "unknown"
+mac_address_indexes = "1: Test beetle \n" \
+                      "2: Black beetle \n" \
+                      "3: Yellow beetle \n" \
+                      "4: Teal beetle \n" \
+                      "5: White beetle \n" \
+                      "6: EMG beetle \n"
 
 while not correctInput:
+    print(mac_address_indexes)
     mac_address_index = int(input("Enter bluno beetle MAC address index: "))
     dancePosition = int(input("Enter user dance position: "))
     mac_address = getMacAddressFromIndex(mac_address_index)
@@ -274,7 +281,12 @@ while True:
         print("Disconnected attempting reconnection")
 
         handshakeCompleted = False
-        scanAndConnect(mac_address)
+
+        connected = False
+        while not connected:
+            print("attempting reconnection")
+            scanAndConnect(mac_address)
+
         buffer.clear()
         packetBuilder.clear()
         handshake()

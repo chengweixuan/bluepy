@@ -221,8 +221,8 @@ class BeetleThread(threading.Thread):
             print(self.index, "connected")
             self.connected = True
         except BTLEException:
-            print(self.index, "unable to connect, attempting in 1s")
-            time.sleep(1)
+            print(self.index, "unable to connect, attempting again")
+            return
 
     def handshake(self, serial_port_char):
         helloPacket = makeCommandPacket('hello')
@@ -284,7 +284,12 @@ class BeetleThread(threading.Thread):
             except BTLEDisconnectError:
                 print(self.index, "disconnected during transfer attempting reconnection")
                 handshakeCompletedFlags[self.index] = False
-                self.scanAndConnect()
+
+                self.connected = False
+                while not self.connected:
+                    print("attempting reconnection")
+                    self.scanAndConnect()
+
                 buffers[self.index].clear()
                 packetBuilders[self.index].clear()
                 self.handshake(serial_port_char)
