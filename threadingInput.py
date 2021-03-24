@@ -95,6 +95,8 @@ def handleDataPacket(packet, index):
     dancePositionMask = (index + 1) << 118
     packet = packet | dancePositionMask  # set dance position bits
     decodedPacket = DataPacket(packet)
+    if corrupted_packet(decodedPacket):
+        return
     receivedPackets[index] = decodedPacket
     dataCounters[index] = dataCounters[index] + 1
 
@@ -167,6 +169,14 @@ def isInvalidIndexRange(index):
         return True
     else:
         return False
+
+
+def oob(angle):
+    return angle > 180 or angle < -180
+
+
+def corrupted_packet(decodedPacket):
+    return oob(decodedPacket.yaw) and oob(decodedPacket.pitch) and oob(decodedPacket.row)
 
 
 class PrintPackets(threading.Thread):
