@@ -2,6 +2,7 @@ import socket
 from secure import get_cipher
 from secure import get_plaintext
 from time import time
+import json
 
 
 class Client:
@@ -18,7 +19,6 @@ class Client:
         cipher = self.socket.recv(1024)
         message = get_plaintext(cipher)
 
-        print(f'received: {message}')
 
         return message
 
@@ -26,7 +26,27 @@ class Client:
         cipher = get_cipher(message)
         self.socket.sendall(cipher)
 
-        print(f'sent {message}')
+    
+    def send_packet(self, packet, idx):
+        p_dict = packet.__dict__
+        p_dict['idx'] = idx
+        p_dict['timestamp'] = time()
+
+        jsonify = json.dumps(p_dict)
+
+        cipher = get_cipher(jsonify)
+        self.socket.sendall(cipher)
+
+        #print(f'message sent {jsonify}')
+
+    def send_move(self, move, idx):
+        jsonify = json.dumps({'movement': move, 'idx': idx})
+
+        cipher = get_cipher(jsonify)
+        self.socket.sendall(cipher)
+
+        #print(f'message sent {jsonify}')
+
 
     def get_clock_offset(self):
         print('starting clock offset calculation...')

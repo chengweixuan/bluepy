@@ -3,6 +3,10 @@ import time
 import struct
 from collections import deque
 import threading
+from node import Client
+from prediction import PredictionManager
+from queue import Queue
+from helper import LeftRightManager
 
 service_uuid = UUID(0xDFB0)
 serial_port_char_uuid = UUID(0xDFB1)
@@ -178,21 +182,49 @@ def oob(angle):
 def corrupted_packet(decodedPacket):
     return oob(decodedPacket.yaw) and oob(decodedPacket.pitch) and oob(decodedPacket.row)
 
+def predict(data):
+    print("Starting prediction")
+
+    predManager = PredictionManager(data)
+    predictions = predManager.run()
+    strings = [pred[-1] for pred in predictions]
+
+    print(f'{strings}')
+    return
 
 class PrintPackets(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
         self.allConnected = False
 
+        self.client = Client('localhost', 1234)
+
     def run(self):
         while True:
-            if handshakeCompletedFlags[0] and handshakeCompletedFlags[1] and handshakeCompletedFlags[2]:
+            # change OR back to AND
+            if handshakeCompletedFlags[0] or handshakeCompletedFlags[1] or handshakeCompletedFlags[2]:
                 self.allConnected = True
 
-            if handshakeCompletedFlags[0] and handshakeCompletedFlags[1] and handshakeCompletedFlags[2]:
-                for index in range(len(receivedPackets)):
-                    print(index, dataCounters[index], receivedPackets[index].__dict__)
-                print()  # provides space
+            if handshakeCompletedFlags[0] or handshakeCompletedFlags[1] or handshakeCompletedFlags[2]:
+                for index in range(1): # range(len(receivedPackets)):
+                    # update LR data buffers
+                    movement = 0
+                    packet = receivedPackets[index].__dict__
+                    move_q[index].append([packet['xAccel'], packet['yAccel'], packet['zAccel'], packet['yaw'], packet['pitch'], packet['row']])
+                    # predict left right movement
+                    if len(move_q[index]) == 20:
+                        movement = LR.getDirection(move_q[index])
+                        print(f'movement detected {movement}')
+                        move_q[index] = []
+
+                    if movement > 0: # dancer changes position
+                        self.client.send_move(movement, index)
+                    else:
+                        pass
+                        #print(index, dataCounters[index], receivedPackets[index].__dict__)
+                        self.client.send_packet(receivedPackets[index], index)
+
+                #print()  # provides space
 
             elif self.allConnected:
                 disconnected_beetles = "Error: beetle: "
@@ -326,12 +358,14 @@ while not correctInput:
 
 currentCommands = ['none', 'none', 'none']
 buffers = [deque(), deque(), deque()]
+move_q = [[], [], []]
 packetBuilders = [bytearray(), bytearray(), bytearray()]
 handshakeCompletedFlags = [False, False, False]
 receivedPackets = [DataPacket(0), DataPacket(0), DataPacket(0)]
 dataCounters = [0, 0, 0]
+LR = LeftRightManager()
 
-for beetleIndex in range(3):
+for beetleIndex in range(1):
     thread = BeetleThread(beetleIndex)
     thread.start()
 
