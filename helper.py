@@ -14,17 +14,17 @@ class LeftRightManager():
             self.lock_duration = self.lock_duration - 1
             return 0
         elif prev_velocity > 0 and current_velocity < 0:
-            self.print_left()    
+            #self.print_left()    
             self.lock_duration = 5
             return 1
         elif prev_velocity < 0 and current_velocity > 0:
-            self.print_right()
+            #self.print_right()
             self.lock_duration = 5
             return 2
         return 0
 
     def getDirection(self, raw_data):
-        reading, alpha = 0, 0.8
+        reading, alpha = 0, 0.5
         for j in range(0, 20):
             reading += (raw_data[j][2] / 1000)
         current_velocity = int(reading - self.velocity_decay)

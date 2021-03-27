@@ -5,7 +5,7 @@ from collections import deque
 import threading
 from node import Client
 from prediction import PredictionManager
-from queue import Queue
+import queue
 from helper import LeftRightManager
 
 service_uuid = UUID(0xDFB0)
@@ -101,7 +101,8 @@ def handleDataPacket(packet, index):
     decodedPacket = DataPacket(packet)
     if corrupted_packet(decodedPacket):
         return
-    receivedPackets[index] = decodedPacket
+    # print(index, decodedPacket.__dict__)
+    q.put([decodedPacket, index])
     dataCounters[index] = dataCounters[index] + 1
 
 
@@ -197,35 +198,32 @@ class PrintPackets(threading.Thread):
         threading.Thread.__init__(self)
         self.allConnected = False
 
-        self.client = Client('localhost', 1234)
+        #self.client = Client('localhost', 1234)
 
     def run(self):
         while True:
-            # change OR back to AND
-            if handshakeCompletedFlags[0] or handshakeCompletedFlags[1] or handshakeCompletedFlags[2]:
-                self.allConnected = True
+            #if handshakeCompletedFlags[0] and handshakeCompletedFlags[1] and handshakeCompletedFlags[2]:
+             #   self.allConnected = True
 
-            if handshakeCompletedFlags[0] or handshakeCompletedFlags[1] or handshakeCompletedFlags[2]:
-                for index in range(1): # range(len(receivedPackets)):
-                    # update LR data buffers
-                    movement = 0
-                    packet = receivedPackets[index].__dict__
-                    move_q[index].append([packet['xAccel'], packet['yAccel'], packet['zAccel'], packet['yaw'], packet['pitch'], packet['row']])
-                    # predict left right movement
-                    if len(move_q[index]) == 20:
-                        movement = LR.getDirection(move_q[index])
-                        print(f'movement detected {movement}')
-                        move_q[index] = []
+            if handshakeCompletedFlags[0] and handshakeCompletedFlags[1] and handshakeCompletedFlags[2]:
+            packet, index = q.get()
+            packet = packet.__dict__
+            
+            # update LR data buffers
+            movement = 0
+            move_q[index].append([packet['xAccel'], packet['yAccel'], packet['zAccel'], packet['yaw'], packet['pitch'], packet['row']])
+            # predict left right movement
+            if len(move_q[index]) == 20:
+                movement = LR[index].getDirection(move_q[index])
+                move_q[index] = []
+                if movement == 1 or movement == 2:
+                    print(index, movement)
+                packet['leftRight'] = movement
+                #self.client.send_packet(packet, index)
 
-                    if movement > 0: # dancer changes position
-                        self.client.send_move(movement, index)
-                    else:
-                        pass
-                        #print(index, dataCounters[index], receivedPackets[index].__dict__)
-                        self.client.send_packet(receivedPackets[index], index)
+                #print(index, dataCounters[index], packet)
 
-                #print()  # provides space
-
+'''
             elif self.allConnected:
                 disconnected_beetles = "Error: beetle: "
                 for index in range(len(receivedPackets)):
@@ -234,9 +232,7 @@ class PrintPackets(threading.Thread):
                 disconnected_beetles += "are disconnected"
                 print(disconnected_beetles)
                 time.sleep(1)
-
-            time.sleep(0.05)  # test delay to limit print
-
+'''
 
 class BeetleThread(threading.Thread):
     def __init__(self, index):
@@ -343,9 +339,9 @@ mac_address_indexes = "1: Test beetle \n" \
 while not correctInput:
     print(mac_address_indexes)
     print("Input the beetles according the dancer positions 1-3 from left to right")
-    firstDancer = int(input("Enter beetle MAC address index of the first dancer: "))
-    secondDancer = int(input("Enter beetle MAC address index of the second dancer: "))
-    thirdDancer = int(input("Enter beetle MAC address index of the dancer dancer: "))
+    firstDancer = 1 #int(input("Enter beetle MAC address index of the first dancer: "))
+    secondDancer = 2 #int(input("Enter beetle MAC address index of the second dancer: "))
+    thirdDancer = 3 #int(input("Enter beetle MAC address index of the dancer dancer: "))
 
     if isInvalidIndexRange(firstDancer) or isInvalidIndexRange(secondDancer) or isInvalidIndexRange(thirdDancer):
         print("Invalid index entered. Try again")
@@ -358,14 +354,15 @@ while not correctInput:
 
 currentCommands = ['none', 'none', 'none']
 buffers = [deque(), deque(), deque()]
+q = queue.Queue()
 move_q = [[], [], []]
 packetBuilders = [bytearray(), bytearray(), bytearray()]
 handshakeCompletedFlags = [False, False, False]
 receivedPackets = [DataPacket(0), DataPacket(0), DataPacket(0)]
 dataCounters = [0, 0, 0]
-LR = LeftRightManager()
+LR = [LeftRightManager(), LeftRightManager(), LeftRightManager()]
 
-for beetleIndex in range(1):
+for beetleIndex in range(3):
     thread = BeetleThread(beetleIndex)
     thread.start()
 

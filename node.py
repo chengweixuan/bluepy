@@ -28,16 +28,13 @@ class Client:
 
     
     def send_packet(self, packet, idx):
-        p_dict = packet.__dict__
-        p_dict['idx'] = idx
-        p_dict['timestamp'] = time()
+        packet['idx'] = idx
+        packet['timestamp'] = time()
 
-        jsonify = json.dumps(p_dict)
+        jsonify = json.dumps(packet)
 
         cipher = get_cipher(jsonify)
         self.socket.sendall(cipher)
-
-        #print(f'message sent {jsonify}')
 
     def send_move(self, move, idx):
         jsonify = json.dumps({'movement': move, 'idx': idx})
