@@ -124,8 +124,9 @@ def handleDataPacket(packet):
         return
     if filename:
         with open(filename, "a") as myFile:
-            myFile.write(str(decodedPacket.xAccel) + "," + str(decodedPacket.yAccel) + "," + str(decodedPacket.zAccel) + "," + str(decodedPacket.yaw) + "," + str(decodedPacket.pitch) + "," + str(decodedPacket.row) + "\n")
-    print(decodedPacket.__dict__)
+            string = str(decodedPacket.xAccel) + "," + str(decodedPacket.yAccel) + "," + str(decodedPacket.zAccel) + "," + str(decodedPacket.yaw) + "," + str(decodedPacket.pitch) + "," + str(decodedPacket.row) + "," + str(int(time.time() * 1000.0)) + "\n"
+            myFile.write(string)
+    print(dataCounter, string)
     dataCounter += 1
 
 
@@ -258,7 +259,7 @@ mac_address_indexes = "1: Test beetle \n" \
 while not correctInput:
     print(mac_address_indexes)
     mac_address_index = int(input("Enter bluno beetle MAC address index: "))
-    dancePosition = int(input("Enter user dance position: "))
+    dancePosition = 1
     mac_address = getMacAddressFromIndex(mac_address_index)
     if mac_address_index > 6 or mac_address_index < 1 or dancePosition < 1 or dancePosition > 3:
         print("invalid index entered. Try again")
